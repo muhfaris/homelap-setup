@@ -4,6 +4,8 @@ port: 3000
 host: yourdomain.com
 path: /apps
 replicas: 1
+# cpu: "1" # CPU allocation per replica (default: 0.25)
+# memory: "256M" # Memory allocation per replica (default: 64M)
 # Registry authentication (optional)
 registry_url: ghcr.io
 registry_username: your_username
