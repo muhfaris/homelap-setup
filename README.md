@@ -2,6 +2,20 @@
 
 Ansible-based homelab infrastructure automation system using Docker Swarm for container orchestration and Traefik for reverse proxy with dynamic routing.
 
+## Table of Contents
+
+- [Features](#features)
+- [Quick Start](#quick-start)
+  - [Prerequisites](#prerequisites)
+  - [Configuration](#configuration)
+  - [Initial Setup](#initial-setup)
+- [Service Management](#service-management)
+  - [Adding Services](#adding-services)
+  - [Service Variables](#service-variables)
+  - [Updating Services](#updating-services)
+- [Directory Structure](#directory-structure)
+- [Architecture](#architecture)
+
 ## Features
 
 - **Docker Swarm Orchestration**: Automatic swarm initialization and overlay networking
