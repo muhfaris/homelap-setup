@@ -110,6 +110,8 @@ ansible-playbook -i inventory.ini playbooks/add-service.yaml --extra-vars @vars/
 - `priority`: Traefik routing priority (default: 2000)
 - `assets_paths`: List of asset paths for separate routing
 - `assets_priority`: Priority for assets router (default: priority + 1000)
+- `cpu`: CPU allocation per replica (default: "0.25")
+- `memory`: Memory allocation per replica (default: "64M")
 
 ### Updating Services
 
