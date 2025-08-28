@@ -4,3 +4,5 @@ port: 80
 host: apps.muhfaris.com
 path: /hello
 replicas: 1
+cpu: "0.5"
+memory: "512M"

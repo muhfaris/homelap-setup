@@ -12,6 +12,10 @@ services:
       replicas: {{ replicas | default(1) }}
       restart_policy: { condition: any }
       update_config: { order: start-first, parallelism: 1 }
+      resources:
+        reservations:
+          cpus: '{{ cpu | default("0.25") }}'
+          memory: '{{ memory | default("64M") }}'
       labels:
         - traefik.enable=true
         - traefik.docker.lbswarm=true
