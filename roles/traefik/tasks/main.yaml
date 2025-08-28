@@ -1,5 +1,5 @@
 - name: Render Traefik stack file
-  template:
+  ansible.builtin.template:
     src: hl-traefik.yaml.j2
     dest: "{{ homelab_root }}/hl-traefik.yaml"
     mode: "0644"

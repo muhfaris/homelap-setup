@@ -9,27 +9,31 @@
     traefik_logs_dir: /var/log/traefik
   pre_tasks:
     - name: Validate required variables
-      fail:
+      ansible.builtin.fail:
         msg: "main_domain is required. Please set it with -e 'main_domain=yourdomain.com'"
       when: main_domain is not defined or main_domain == ""
     - name: Check if traefik stack already exists
-      shell: docker stack ls --format "table {{ '{{.Name}}' }}" | grep -w "{{ stack_name }}"
+      ansible.builtin.shell:
+        cmd: set -o pipefail && docker stack ls --format "table {{ '{{.Name}}' }}" | grep -w "{{ stack_name }}"
+        executable: /bin/bash
       register: stack_exists
       failed_when: false
       changed_when: false
     - name: Check if traefik service is running
-      shell: docker service ls --format "table {{ '{{.Name}}' }}" | grep -w "{{ stack_name }}_traefik"
+      ansible.builtin.shell:
+        cmd: set -o pipefail && docker service ls --format "table {{ '{{.Name}}' }}" | grep -w "{{ stack_name }}_traefik"
+        executable: /bin/bash
       register: traefik_exists
       failed_when: false
       changed_when: false
     - name: Skip initialization if traefik already running
-      debug:
+      ansible.builtin.debug:
         msg: "Traefik stack '{{ stack_name }}' already exists. Skipping initialization. Use update-service.yaml for updates."
       when: stack_exists.rc == 0 or traefik_exists.rc == 0
     - name: Stop playbook if traefik exists
-      meta: end_play
+      ansible.builtin.meta: end_play
       when: stack_exists.rc == 0 or traefik_exists.rc == 0
   roles:
     - role: common
-    - role: _shared
+    - role: shared
     - role: traefik

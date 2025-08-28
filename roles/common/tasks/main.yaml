@@ -1,5 +1,5 @@
 - name: Ensure base directories
-  file:
+  ansible.builtin.file:
     path: "{{ item }}"
     state: directory
     mode: "0755"
@@ -10,8 +10,8 @@
     - "{{ dynamic_dir }}"
     - "{{ traefik_logs_dir | default('/var/log/traefik') }}"
 - name: Ensure Python libs for docker modules (APT)
-  apt:
-    update_cache: yes
+  ansible.builtin.apt:
+    update_cache: true
     name:
       - python3
       - python3-apt
@@ -26,7 +26,8 @@
   community.docker.docker_network:
     name: web
     state: absent
-  ignore_errors: true
+  register: web_network
+  failed_when: web_network.failed and 'No such network' not in web_network.msg
 
 - name: Ensure overlay network 'web'
   community.docker.docker_network:
@@ -37,7 +38,7 @@
     driver_options:
       encrypted: "false"
 - name: Logrotate for Traefik
-  copy:
+  ansible.builtin.copy:
     dest: /etc/logrotate.d/traefik
     mode: "0644"
     content: |
@@ -52,7 +53,7 @@
           create 640 root adm
       }
 - name: Cron - prune docker weekly
-  cron:
+  ansible.builtin.cron:
     name: "docker prune weekly"
     user: root
     minute: "15"
@@ -60,7 +61,7 @@
     weekday: "0"
     job: "docker system prune -af --filter 'until=240h' && docker volume prune -f"
 - name: Cron - purge old traefik logs
-  cron:
+  ansible.builtin.cron:
     name: "purge old traefik logs"
     user: root
     minute: "30"

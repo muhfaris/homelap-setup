@@ -1,4 +1,5 @@
-- hosts: homelab
+- name: Add a new service
+  hosts: homelab
   become: true
   vars:
     homelab_root: /opt/homelab
@@ -6,7 +7,7 @@
     services_dir: "{{ homelab_root }}/services"
     dynamic_dir: "{{ homelab_root }}/dynamic/routers"
   roles:
-    - role: _shared
+    - role: shared
     - role: service
       vars:
         # wajib dikirim via -e saat run:
@@ -16,19 +17,18 @@
         playbook_action: add
   post_tasks:
     - name: Get service files
-      find:
+      ansible.builtin.find:
         paths: "{{ services_dir }}"
         patterns: "*.yaml"
       register: service_files
     - name: Deploy service to homelab stack (with registry auth)
-      shell: |
-        docker stack deploy \
-          --with-registry-auth \
-          --compose-file "{{ item }}" \
-          "{{ stack_name }}"
-      loop: "{{ service_files.files | map(attribute='path') | list }}"
+      community.docker.docker_stack:
+        state: present
+        name: "{{ stack_name }}"
+        with_registry_auth: true
+        compose: "{{ service_files.files | map(attribute='path') | list }}"
       when: service_files.files | length > 0
     - name: No services to deploy
-      debug:
+      ansible.builtin.debug:
         msg: "No service files found in {{ services_dir }}"
       when: service_files.files | length == 0

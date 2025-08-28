@@ -1,4 +1,5 @@
-- hosts: homelab
+- name: Update Traefik configuration
+  hosts: homelab
   become: true
   vars:
     homelab_root: /opt/homelab
@@ -7,5 +8,5 @@
     dynamic_dir: "{{ homelab_root }}/dynamic/routers"
     traefik_logs_dir: /var/log/traefik
   roles:
-    - role: _shared
+    - role: shared
     - role: traefik
