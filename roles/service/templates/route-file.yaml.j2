@@ -1,0 +1,19 @@
+http:
+  routers:
+    {{ name }}:
+      rule: Host(`{{ host }}`) && PathPrefix(`{{ path }}`)
+      entryPoints: [web]
+      service: {{ name }}@swarm
+      priority: {{ priority | default(2000) }}
+      middlewares: [{{ name }}-strip]
+{% if assets_paths is defined and assets_paths %}
+    {{ name }}-assets:
+      rule: Host(`{{ host }}`) && ({{ assets_paths | map('regex_replace', '^(.*)$', 'PathPrefix(`\\1`)') | join(' || ') }})
+      entryPoints: [web]
+      service: {{ name }}@swarm
+      priority: {{ assets_priority | default(priority | default(2000) + 1000) }}
+{% endif %}
+  middlewares:
+    {{ name }}-strip:
+      stripPrefix:
+        prefixes: ["{{ path }}"]

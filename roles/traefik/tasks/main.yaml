@@ -1,0 +1,17 @@
+- name: Render Traefik stack file
+  template:
+    src: hl-traefik.yaml.j2
+    dest: "{{ homelab_root }}/hl-traefik.yaml"
+    mode: "0644"
+  notify: Redeploy homelab stack
+- name: Deploy homelab stack (ensure running)
+  community.docker.docker_stack:
+    state: present
+    name: "{{ stack_name }}"
+    compose: >-
+      {{
+
+
+        [ homelab_root + '/hl-traefik.yaml' ] +
+        lookup('ansible.builtin.fileglob', services_dir + '/*.yaml', wantlist=True)
+      }}

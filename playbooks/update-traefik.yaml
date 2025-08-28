@@ -1,0 +1,11 @@
+- hosts: homelab
+  become: true
+  vars:
+    homelab_root: /opt/homelab
+    stack_name: hl
+    services_dir: "{{ homelab_root }}/services"
+    dynamic_dir: "{{ homelab_root }}/dynamic/routers"
+    traefik_logs_dir: /var/log/traefik
+  roles:
+    - role: _shared
+    - role: traefik

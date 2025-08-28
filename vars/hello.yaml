@@ -1,0 +1,6 @@
+name: hello
+image: devmuhfaris/hello-world
+port: 80
+host: apps.muhfaris.com
+path: /hello
+replicas: 1

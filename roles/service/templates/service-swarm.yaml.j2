@@ -1,0 +1,19 @@
+version: "3.9"
+
+networks:
+  web:
+    external: true
+
+services:
+  {{ name }}:
+    image: {{ image }}
+    networks: [web]
+    deploy:
+      replicas: {{ replicas | default(1) }}
+      restart_policy: { condition: any }
+      update_config: { order: start-first, parallelism: 1 }
+      labels:
+        - traefik.enable=true
+        - traefik.docker.lbswarm=true
+        - traefik.docker.network=web
+        - traefik.http.services.{{ name }}.loadbalancer.server.port={{ port }}

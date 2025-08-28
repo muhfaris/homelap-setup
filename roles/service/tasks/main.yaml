@@ -1,0 +1,6 @@
+- name: Include add-service tasks
+  include_tasks: add.yaml
+  when: playbook_action == "add"
+- name: Include update-service tasks
+  include_tasks: update.yaml
+  when: playbook_action == "update"

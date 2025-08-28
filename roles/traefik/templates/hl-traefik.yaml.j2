@@ -1,0 +1,51 @@
+version: "3.9"
+
+networks:
+  web:
+    external: true
+
+services:
+  traefik:
+    image: traefik:v3.1
+    command:
+      - --entrypoints.web.address=:8080
+      - --api=true
+      - --api.dashboard=true
+      - --providers.docker=true
+      - --providers.swarm.endpoint=tcp://127.0.0.1:2377
+      - --providers.docker.network=web 
+      - --providers.docker.exposedbydefault=false
+      - --providers.file.directory=/etc/traefik/dynamic
+      - --providers.file.watch=true
+      - --accesslog=true
+      - --accesslog.format=json
+      - --accesslog.filepath=/var/log/traefik/access.json
+      - --log.level=DEBUG
+      - --log.filepath=/var/log/traefik/traefik.log
+      - --entrypoints.web.forwardedHeaders.insecure=true
+    ports:
+      - target: 8080
+        published: 8080
+        protocol: tcp
+        mode: host
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dashboard.rule=(Host(`{{ main_domain | default('localhost') }}`) || Host(`localhost`)) && (PathPrefix(`/traefik`) || PathPrefix(`/api`) || PathPrefix(`/dashboard`))"
+      - "traefik.http.routers.dashboard.service=api@internal"
+      - "traefik.http.routers.dashboard.entrypoints=web"
+      # Strip the '/traefik' base so api@internal sees /api or /dashboard
+      - "traefik.http.middlewares.dashboard-strip.stripprefixregex.regex=^/traefik"
+      - "traefik.http.routers.dashboard.middlewares=dashboard-strip@docker"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - {{ homelab_root }}/dynamic:/etc/traefik/dynamic:ro
+      - {{ traefik_logs_dir }}:/var/log/traefik
+    networks: [web]
+    deploy:
+      placement:
+        constraints: [ "node.role == manager" ]
+      restart_policy: { condition: any }
+      update_config: 
+        order: stop-first
+        parallelism: 1
+        delay: 10s

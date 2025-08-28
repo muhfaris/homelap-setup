@@ -1,0 +1,36 @@
+- hosts: homelab
+  become: true
+  vars:
+    homelab_root: /opt/homelab
+    stack_name: hl
+    services_dir: "{{ homelab_root }}/services"
+    dynamic_dir: "{{ homelab_root }}/dynamic/routers"
+  pre_tasks:
+    - name: Check if stack exists
+      shell: docker stack ls --format "table {{ '{{.Name}}' }}" | grep -w "{{ stack_name }}"
+      register: stack_exists
+      failed_when: false
+      changed_when: false
+    - name: Fail if stack doesn't exist
+      fail:
+        msg: "Stack '{{ stack_name }}' doesn't exist. Run site.yaml first to bootstrap the homelab."
+      when: stack_exists.rc != 0
+  roles:
+    - role: _shared
+    - role: service
+      vars:
+        # wajib dikirim via -e saat run:
+        # name, image, port, host, path
+        replicas: 1
+        priority: 2000
+        playbook_action: update
+  post_tasks:
+    - name: Update stack with stop-first strategy
+      community.docker.docker_stack:
+        state: present
+        name: "{{ stack_name }}"
+        compose: >-
+          {{
+
+            lookup('ansible.builtin.fileglob', services_dir + '/*.yaml', wantlist=True)
+          }}

@@ -1,0 +1,68 @@
+- name: Ensure base directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - "{{ homelab_root }}"
+    - "{{ services_dir }}"
+    - "{{ homelab_root }}/dynamic"
+    - "{{ dynamic_dir }}"
+    - "{{ traefik_logs_dir | default('/var/log/traefik') }}"
+- name: Ensure Python libs for docker modules (APT)
+  apt:
+    update_cache: yes
+    name:
+      - python3
+      - python3-apt
+      - python3-pip # opsional, untuk hal lain
+      - python3-docker # <— ini yang penting (Docker SDK for Python)
+      - python3-jsondiff # dipakai beberapa modul community.docker
+    state: present
+- name: Init Docker Swarm
+  community.docker.docker_swarm:
+    state: present
+- name: Remove existing web network if present
+  community.docker.docker_network:
+    name: web
+    state: absent
+  ignore_errors: true
+
+- name: Ensure overlay network 'web'
+  community.docker.docker_network:
+    name: web
+    driver: overlay
+    scope: swarm
+    state: present
+    driver_options:
+      encrypted: "false"
+- name: Logrotate for Traefik
+  copy:
+    dest: /etc/logrotate.d/traefik
+    mode: "0644"
+    content: |
+      {{ traefik_logs_dir }}/access.json {{ traefik_logs_dir }}/traefik.log {
+          daily
+          rotate 14
+          missingok
+          compress
+          delaycompress
+          notifempty
+          copytruncate
+          create 640 root adm
+      }
+- name: Cron - prune docker weekly
+  cron:
+    name: "docker prune weekly"
+    user: root
+    minute: "15"
+    hour: "3"
+    weekday: "0"
+    job: "docker system prune -af --filter 'until=240h' && docker volume prune -f"
+- name: Cron - purge old traefik logs
+  cron:
+    name: "purge old traefik logs"
+    user: root
+    minute: "30"
+    hour: "3"
+    job: "find {{ traefik_logs_dir }} -type f -name '*.gz' -mtime +14 -delete"
