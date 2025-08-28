@@ -125,6 +125,9 @@ Optional variables:
 - `assets_priority`: Priority for assets router (default: priority + 1000)
 - `cpu`: CPU allocation per replica (default: "0.25")
 - `memory`: Memory allocation per replica (default: "64M")
+- `command`: Custom command to run in the container. Required for `service_config`.
+- `service_config`: A dictionary of structured configuration data to be mounted as a file.
+- `service_config_format`: The format of the configuration file (`yaml` or `json`). Defaults to `yaml`.
 
 ## Infrastructure Features
 
@@ -217,3 +220,31 @@ assets_paths:
 ```
 
 Deploy with: `--extra-vars @vars/hello.yaml`
+
+### Advanced Service Configuration
+For applications that need structured configuration, use the `service_config` variable. This injects a configuration file into the service container.
+
+**How it works:**
+1.  A `service_config` object in the service's var file triggers the feature.
+2.  A Docker Swarm config is created with the structured data (YAML or JSON).
+3.  The config is mounted as a file at `/<service-name>.config.<format>` inside the container.
+4.  The system appends a `--config` flag to the service `command`, pointing to this file.
+
+**Example:**
+```yaml
+# vars/my-app.yml
+name: my-app
+image: my-org/my-app:latest
+port: 8080
+host: apps.yourdomain.com
+path: /my-app
+command: "node server.js"
+service_config:
+  database:
+    host: db.internal
+    port: 5432
+  api_keys:
+    - key: "key1"
+      value: "value1"
+```
+The application must be able to parse the configuration file passed via the `--config` flag.
