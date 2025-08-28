@@ -6,6 +6,22 @@
       - port is defined
       - host is defined
       - path is defined
+- name: Validate config vars
+  ansible.builtin.assert:
+    that:
+      - command is defined
+    fail_msg: "'command' is required when 'service_config' is defined"
+  when: service_config is defined
+- name: Set config name
+  ansible.builtin.set_fact:
+    service_config_name: "{{ name }}_config_{{ service_config | to_nice_yaml | hash('sha1') | truncate(12, True, '') }}"
+  when: service_config is defined
+- name: Create docker config
+  community.docker.docker_config:
+    name: "{{ service_config_name }}"
+    data: "{{ service_config | to_nice_yaml }}"
+    state: present
+  when: service_config is defined
 - name: Docker registry login
   community.docker.docker_login:
     registry_url: "{{ registry_url }}"
