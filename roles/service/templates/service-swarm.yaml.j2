@@ -19,7 +19,7 @@ services:
         target: "{{ service_config_target_path | default('/' + name + '.config.' + (service_config_format | default('yaml'))) }}"
 {% endif %}
 {% if command is defined %}
-    command: /bin/sh -c "exec {{ command }}{% if service_config is defined and '--config' not in command %} --config {{ service_config_target_path | default('/' + name + '.config.' + (service_config_format | default('yaml'))) }}{% endif %}"
+    command: /bin/sh -c "exec {{ command }}"
 {% endif %}
     deploy:
       replicas: {{ replicas | default(1) }}
