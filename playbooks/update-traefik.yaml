@@ -1,4 +1,5 @@
-- hosts: homelab
+- name: Update Traefik configuration
+  hosts: homelab
   become: true
   vars:
     homelab_root: /opt/homelab

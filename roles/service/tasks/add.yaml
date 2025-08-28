@@ -1,5 +1,5 @@
 - name: Validate required vars
-  assert:
+  ansible.builtin.assert:
     that:
       - name is defined
       - image is defined
@@ -13,16 +13,16 @@
     password: "{{ registry_password }}"
   when: registry_url is defined and registry_username is defined and registry_password is defined
 - name: Render service (Swarm)
-  template:
+  ansible.builtin.template:
     src: service-swarm.yaml.j2
     dest: "{{ services_dir }}/{{ name }}.yaml"
     mode: "0644"
   notify: Redeploy homelab stack
 - name: Render router (Traefik File Provider)
-  template:
+  ansible.builtin.template:
     src: route-file.yaml.j2
     dest: "{{ homelab_root }}/dynamic/routers/{{ name }}.yaml"
     mode: "0644"
   notify: Redeploy homelab stack
 - name: Force handler execution
-  meta: flush_handlers
+  ansible.builtin.meta: flush_handlers

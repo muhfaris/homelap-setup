@@ -5,10 +5,6 @@
     name: "{{ stack_name }}"
     compose: >-
       {{
-
-
-
-
         [ homelab_root + '/hl-traefik.yaml' ] +
         lookup('ansible.builtin.fileglob', services_dir + '/*.yaml', wantlist=True)
       }}
