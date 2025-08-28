@@ -35,5 +35,5 @@
       when: stack_exists.rc == 0 or traefik_exists.rc == 0
   roles:
     - role: common
-    - role: _shared
+    - role: shared
     - role: traefik

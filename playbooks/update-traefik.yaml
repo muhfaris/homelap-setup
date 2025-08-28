@@ -8,5 +8,5 @@
     dynamic_dir: "{{ homelab_root }}/dynamic/routers"
     traefik_logs_dir: /var/log/traefik
   roles:
-    - role: _shared
+    - role: shared
     - role: traefik

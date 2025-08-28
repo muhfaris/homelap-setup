@@ -19,7 +19,7 @@
         msg: "Stack '{{ stack_name }}' doesn't exist. Run site.yaml first to bootstrap the homelab."
       when: stack_exists.rc != 0
   roles:
-    - role: _shared
+    - role: shared
     - role: service
       vars:
         # wajib dikirim via -e saat run:

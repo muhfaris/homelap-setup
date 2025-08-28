@@ -7,7 +7,7 @@
     services_dir: "{{ homelab_root }}/services"
     dynamic_dir: "{{ homelab_root }}/dynamic/routers"
   roles:
-    - role: _shared
+    - role: shared
     - role: service
       vars:
         # wajib dikirim via -e saat run:
