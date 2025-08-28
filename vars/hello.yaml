@@ -6,3 +6,10 @@ path: /hello
 replicas: 1
 cpu: "0.5"
 memory: "512M"
+# command: "node server.js" # optional, command to run in container
+# service_config: # optional, JSON-compatible config example
+#   logging:
+#     level: "debug"
+#     output: "stdout"
+#   feature_flags: [ "new_dashboard", "beta_feature" ]
+# service_config_format: "json" # optional, 'yaml' or 'json', defaults to 'yaml'

@@ -6,6 +6,12 @@ path: /apps
 replicas: 1
 # cpu: "1" # CPU allocation per replica (default: 0.25)
 # memory: "256M" # Memory allocation per replica (default: 64M)
+# command: "node server.js" # optional, command to run in container
+# service_config: # optional, config in yaml/json format
+#   db:
+#     host: "db.example.com"
+#     port: 5432
+# service_config_format: "yaml" # optional, 'yaml' or 'json', defaults to 'yaml'
 # Registry authentication (optional)
 registry_url: ghcr.io
 registry_username: your_username
