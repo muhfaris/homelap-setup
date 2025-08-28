@@ -1,0 +1,10 @@
+name: apps
+image: hcr.io/muhfaris/apps:main
+port: 3000
+host: yourdomain.com
+path: /apps
+replicas: 1
+# Registry authentication (optional)
+registry_url: ghcr.io
+registry_username: your_username
+registry_password: your_token_here

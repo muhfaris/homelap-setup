@@ -1,2 +1,5 @@
 # inventory
 inventory.ini
+
+# vars files may contain sensitive data
+vars/
