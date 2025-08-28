@@ -11,6 +11,7 @@ replicas: 1
 #   db:
 #     host: "db.example.com"
 #     port: 5432
+# service_config_format: "yaml" # optional, 'yaml' or 'json', defaults to 'yaml'
 # Registry authentication (optional)
 registry_url: ghcr.io
 registry_username: your_username

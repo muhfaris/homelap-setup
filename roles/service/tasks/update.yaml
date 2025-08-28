@@ -19,7 +19,7 @@
 - name: Create docker config
   community.docker.docker_config:
     name: "{{ service_config_name }}"
-    data: "{{ service_config | to_nice_yaml }}"
+    data: "{{ service_config | to_json if service_config_format == 'json' else service_config | to_nice_yaml }}"
     state: present
   when: service_config is defined
 - name: Docker registry login (if needed)
