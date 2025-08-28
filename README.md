@@ -28,51 +28,25 @@ Ansible-based homelab infrastructure automation system using Docker Swarm for co
 
 This system is designed to automate the deployment of services to a Docker Swarm cluster. Here’s a visual overview of the workflow when you add a new service:
 
-```
-                                     ┌─────────────────────────────┐
-                                     │      Your Local Machine     │
-                                     └─────────────────────────────┘
-                                                  │
-                                                  │ 1. Run Ansible Playbook
-                                                  │
-                                                  ▼
-     ┌───────────────────┐        ┌───────────────────────────────────┐
-     │  vars/hello.yaml  │        │       ansible-playbook -i ...       │
-     └───────────────────┘        └───────────────────────────────────┘
-              │                                      │ ssh
-              └──────────────────────────────────────┘
-                                                     │
-                                                     ▼
-┌───────────────────────────────────────────────────────────────────────────────────────────┐
-│                                       Homelab Server                                        │
-│                                                                                           │
-│   ┌──────────────────────────┐     ┌────────────────────────┐      ┌─────────────────────┐   │
-│   │  Ansible `service` Role  │ ────▶   Templates (Jinja2)   │      │    Docker Swarm     │   │
-│   └──────────────────────────┘     └────────────────────────┘      └─────────────────────┘   │
-│                │                                                         ▲                │
-│                │ 2. Generate Configs                                     │ 4. Deploy      │
-│                ▼                                                         │                │
-│   ┌───────────────────────────┐      ┌──────────────────────────┐          │                │
-│   │ services/hello.yaml       │      │ dynamic/routers/         │          │                │
-│   │ (Docker Service Def)      │      │ hello.yaml               │          │                │
-│   └───────────────────────────┘      │ (Traefik Route)          │          │                │
-│                │                     └──────────────────────────┘          │                │
-│                └───────────────────────────────────────────────────────────┘                │
-│                                              │                                            │
-│                                              │ 3. Hot Reload                              │
-│                                              ▼                                            │
-│                                     ┌──────────────────┐                                  │
-│                                     │     Traefik      │                                  │
-│                                     └──────────────────┘                                  │
-│                                              │                                            │
-└──────────────────────────────────────────────┼────────────────────────────────────────────┘
-                                               │
-                                               │ 5. User Access (e.g., yourdomain.com/hello)
-                                               │
-                                               ▼
-                                     ┌──────────────────┐
-                                     │    End User      │
-                                     └──────────────────┘
+```mermaid
+graph TD
+    subgraph "Your Local Machine"
+        A["<br><b>You</b><br>"] -- "1. Run ansible-playbook" --> B(vars/hello.yaml + playbook command)
+    end
+
+    subgraph "Homelab Server"
+        C[Ansible `service` Role] -->|Uses| D(Jinja2 Templates)
+        C -->|2. Generates| E(services/hello.yaml)
+        C -->|2. Generates| F(dynamic/routers/hello.yaml)
+        E -->|4. Deploy| G(Docker Swarm)
+        F -->|3. Hot Reload| H(Traefik)
+    end
+
+    I["<br><b>End User</b><br>"]
+
+    B -- SSH --> C
+    G --> H
+    H -->|5. Access Service| I
 ```
 
 **Workflow Steps:**
