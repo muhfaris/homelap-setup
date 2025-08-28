@@ -112,6 +112,9 @@ ansible-playbook -i inventory.ini playbooks/add-service.yaml --extra-vars @vars/
 - `assets_priority`: Priority for assets router (default: priority + 1000)
 - `cpu`: CPU allocation per replica (default: "0.25")
 - `memory`: Memory allocation per replica (default: "64M")
+- `command`: Custom command to run in the container. Required for `service_config`.
+- `service_config`: A dictionary of structured configuration data to be mounted as a file.
+- `service_config_format`: The format of the configuration file (`yaml` or `json`). Defaults to `yaml`.
 
 ### Updating Services
 
@@ -121,6 +124,41 @@ ansible-playbook -i inventory.ini playbooks/add-service.yaml --extra-vars @vars/
 ```
 
 Changes to routing configuration trigger hot reloads. Changes to image or replicas trigger rolling updates.
+
+### Advanced Service Configuration
+
+For applications requiring structured configuration, you can use the `service_config` feature. This allows you to inject a configuration file directly into your service container.
+
+#### How It Works
+When you define a `service_config` object in your service's variable file, the system:
+1. Creates a Docker Swarm config containing your structured data (in YAML or JSON format).
+2. Mounts this config as a file into your service container at `/<service-name>.config.<format>`.
+3. Appends a `--config` flag to your service's `command`, pointing to the mounted config file.
+
+#### Example
+Here’s an example of a service that uses a YAML configuration:
+```yaml
+# vars/my-app.yml
+name: my-app
+image: my-org/my-app:latest
+port: 8080
+host: apps.yourdomain.com
+path: /my-app
+command: "node server.js"
+service_config:
+  database:
+    host: db.internal
+    port: 5432
+  api_keys:
+    - key: "key1"
+      value: "value1"
+```
+
+In this example:
+- A configuration file will be mounted at `/my-app.config.yaml`.
+- The service's command will be executed as: `node server.js --config /my-app.config.yaml`.
+
+**Note**: Your application must be able to parse the configuration file passed via the `--config` flag.
 
 ## Directory Structure
 
