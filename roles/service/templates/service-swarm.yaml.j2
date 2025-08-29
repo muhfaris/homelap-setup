@@ -14,12 +14,13 @@ services:
     image: {{ image }}
     networks: [web]
 {% if service_config is defined %}
+{%   set default_target_path = '/' + name + '.config.' + (service_config_format | default('yaml')) %}
     configs:
       - source: {{ service_config_name }}
-        target: /{{ name }}.config.{{ service_config_format | default('yaml') }}
+        target: "{{ service_config_target_path | default(default_target_path) }}"
 {% endif %}
 {% if command is defined %}
-    command: /bin/sh -c "exec {{ command }}{% if service_config is defined %} --config /{{ name }}.config.{{ service_config_format | default('yaml') }}{% endif %}"
+    command: /bin/sh -c "exec {{ command }}"
 {% endif %}
     deploy:
       replicas: {{ replicas | default(1) }}

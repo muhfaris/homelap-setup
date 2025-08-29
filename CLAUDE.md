@@ -125,9 +125,11 @@ Optional variables:
 - `assets_priority`: Priority for assets router (default: priority + 1000)
 - `cpu`: CPU allocation per replica (default: "0.25")
 - `memory`: Memory allocation per replica (default: "64M")
-- `command`: Custom command to run in the container. Required for `service_config`.
-- `service_config`: A dictionary of structured configuration data to be mounted as a file.
+- `command`: The full command to run in the container. You are responsible for including any flags needed to read a configuration file.
+- `service_config`: A dictionary of structured configuration data to be mounted as a file into the container.
 - `service_config_format`: The format of the configuration file (`yaml` or `json`). Defaults to `yaml`.
+- `service_config_target_path`: The full path inside the container where the configuration file will be mounted (e.g., `/app/config.yaml`). Defaults to `/<name>.config.<format>`.
+- `service_config_name_override`: Allows you to specify a custom name for the Docker Swarm config resource, overriding the auto-generated hashed name.
 
 ## Infrastructure Features
 
@@ -221,16 +223,19 @@ assets_paths:
 
 Deploy with: `--extra-vars @vars/hello.yaml`
 
-### Advanced Service Configuration
-For applications that need structured configuration, use the `service_config` variable. This injects a configuration file into the service container.
+### Advanced: Using Configuration Files
 
-**How it works:**
-1.  A `service_config` object in the service's var file triggers the feature.
-2.  A Docker Swarm config is created with the structured data (YAML or JSON).
-3.  The config is mounted as a file at `/<service-name>.config.<format>` inside the container.
-4.  The system appends a `--config` flag to the service `command`, pointing to this file.
+For applications requiring a configuration file, you have full control over how it's mounted and used. The system no longer automatically injects any command-line flags, giving you the flexibility to support any application.
 
-**Example:**
+#### How It Works
+When you define `service_config` in your service's variable file, the system creates a Docker Swarm config object from your data. You then tell your application how to use it.
+
+1.  **Define the Configuration Content**: Add your structured data to the `service_config` variable.
+2.  **Specify the Mount Path**: Use `service_config_target_path` to define exactly where the configuration file should be placed inside your container. This path should match what your application expects.
+3.  **Provide the Full Command**: Use the `command` variable to specify the *exact* command to run your application, including the flag needed to read the config file (e.g., `-c`, `--config-file`, etc.).
+
+#### Example
+Here’s an example of a service that uses a custom flag (`-c`) and a custom path (`/etc/my-app/settings.yaml`) for its configuration:
 ```yaml
 # vars/my-app.yml
 name: my-app
@@ -238,7 +243,8 @@ image: my-org/my-app:latest
 port: 8080
 host: apps.yourdomain.com
 path: /my-app
-command: "node server.js"
+
+# 1. Define the config content
 service_config:
   database:
     host: db.internal
@@ -246,5 +252,12 @@ service_config:
   api_keys:
     - key: "key1"
       value: "value1"
+
+# 2. Specify the target path inside the container
+service_config_target_path: /etc/my-app/settings.yaml
+
+# 3. Provide the full command, including the custom flag and path
+command: "node server.js -c /etc/my-app/settings.yaml"
 ```
-The application must be able to parse the configuration file passed via the `--config` flag.
+
+This approach gives you the flexibility to work with any application, regardless of its specific command-line arguments.

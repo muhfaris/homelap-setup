@@ -135,7 +135,7 @@ ansible-playbook -i inventory.ini playbooks/add-service.yaml --extra-vars @vars/
 
 **Required:**
 - `name`: Service identifier
-- `image`: Docker image reference  
+- `image`: Docker image reference
 - `port`: Internal service port
 - `host`: External hostname
 - `path`: URL path for routing
@@ -147,9 +147,11 @@ ansible-playbook -i inventory.ini playbooks/add-service.yaml --extra-vars @vars/
 - `assets_priority`: Priority for assets router (default: priority + 1000)
 - `cpu`: CPU allocation per replica (default: "0.25")
 - `memory`: Memory allocation per replica (default: "64M")
-- `command`: Custom command to run in the container. Required for `service_config`.
-- `service_config`: A dictionary of structured configuration data to be mounted as a file.
+- `command`: The full command to run in the container. You are responsible for including any flags needed to read a configuration file.
+- `service_config`: A dictionary of structured configuration data to be mounted as a file into the container.
 - `service_config_format`: The format of the configuration file (`yaml` or `json`). Defaults to `yaml`.
+- `service_config_target_path`: The full path inside the container where the configuration file will be mounted (e.g., `/app/config.yaml`). Defaults to `/<name>.config.<format>`.
+- `service_config_name_override`: Allows you to specify a custom name for the Docker Swarm config resource, overriding the auto-generated hashed name.
 
 ### Updating Services
 
@@ -160,18 +162,19 @@ ansible-playbook -i inventory.ini playbooks/add-service.yaml --extra-vars @vars/
 
 Changes to routing configuration trigger hot reloads. Changes to image or replicas trigger rolling updates.
 
-### Advanced Service Configuration
+### Advanced: Using Configuration Files
 
-For applications requiring structured configuration, you can use the `service_config` feature. This allows you to inject a configuration file directly into your service container.
+For applications requiring a configuration file, you have full control over how it's mounted and used. The system no longer automatically injects any command-line flags, giving you the flexibility to support any application.
 
 #### How It Works
-When you define a `service_config` object in your service's variable file, the system:
-1. Creates a Docker Swarm config containing your structured data (in YAML or JSON format).
-2. Mounts this config as a file into your service container at `/<service-name>.config.<format>`.
-3. Appends a `--config` flag to your service's `command`, pointing to the mounted config file.
+When you define `service_config` in your service's variable file, the system creates a Docker Swarm config object from your data. You then tell your application how to use it.
+
+1.  **Define the Configuration Content**: Add your structured data to the `service_config` variable.
+2.  **Specify the Mount Path**: Use `service_config_target_path` to define exactly where the configuration file should be placed inside your container. This path should match what your application expects.
+3.  **Provide the Full Command**: Use the `command` variable to specify the *exact* command to run your application, including the flag needed to read the config file (e.g., `-c`, `--config-file`, etc.).
 
 #### Example
-Here’s an example of a service that uses a YAML configuration:
+Here’s an example of a service that uses a custom flag (`-c`) and a custom path (`/etc/my-app/settings.yaml`) for its configuration:
 ```yaml
 # vars/my-app.yml
 name: my-app
@@ -179,7 +182,8 @@ image: my-org/my-app:latest
 port: 8080
 host: apps.yourdomain.com
 path: /my-app
-command: "node server.js"
+
+# 1. Define the config content
 service_config:
   database:
     host: db.internal
@@ -187,13 +191,20 @@ service_config:
   api_keys:
     - key: "key1"
       value: "value1"
+
+# 2. Specify the target path inside the container
+service_config_target_path: /etc/my-app/settings.yaml
+
+# 3. Provide the full command, including the custom flag and path
+command: "node server.js -c /etc/my-app/settings.yaml"
 ```
 
 In this example:
-- A configuration file will be mounted at `/my-app.config.yaml`.
-- The service's command will be executed as: `node server.js --config /my-app.config.yaml`.
+- A configuration file is created from the `service_config` data.
+- It is mounted inside the container at `/etc/my-app/settings.yaml`.
+- The service's command is executed *exactly* as `node server.js -c /etc/my-app/settings.yaml`.
 
-**Note**: Your application must be able to parse the configuration file passed via the `--config` flag.
+This approach gives you the flexibility to work with any application, regardless of its specific command-line arguments.
 
 ## Directory Structure
 
