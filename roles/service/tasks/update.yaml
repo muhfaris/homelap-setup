@@ -1,4 +1,4 @@
-- name: Validate required vars
+- name: Validate required vars (public HTTP service)
   ansible.builtin.assert:
     that:
       - name is defined
@@ -6,6 +6,13 @@
       - port is defined
       - host is defined
       - path is defined
+  when: not (internal_only | default(false))
+- name: Validate required vars (internal-only service)
+  ansible.builtin.assert:
+    that:
+      - name is defined
+      - image is defined
+  when: internal_only | default(false)
 - name: Validate config vars
   ansible.builtin.assert:
     that:
@@ -22,6 +29,18 @@
     data: "{{ service_config | to_json if service_config_format == 'json' else service_config | to_nice_yaml }}"
     state: present
   when: service_config is defined
+- name: Normalize environment variables map
+  ansible.builtin.set_fact:
+    svc_environment: "{{ environment | default(env) | default(env_vars) }}"
+  when: (environment is defined) or (env is defined) or (env_vars is defined)
+- name: Ensure named volumes (if defined)
+  community.docker.docker_volume:
+    name: "{{ item.name }}"
+    state: present
+  loop: "{{ volumes | default([]) }}"
+  loop_control:
+    label: "{{ item.name | default('volume') }}"
+  when: volumes is defined and volumes | length > 0
 - name: Docker registry login (if needed)
   community.docker.docker_login:
     registry_url: "{{ registry_url }}"
@@ -40,5 +59,6 @@
     dest: "{{ homelab_root }}/dynamic/routers/{{ name }}.yaml"
     mode: "0644"
   notify: Redeploy homelab stack
+  when: not (internal_only | default(false))
 
 # No force handler execution for updates - let post_tasks handle deployment

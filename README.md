@@ -152,6 +152,11 @@ ansible-playbook -i inventory.ini playbooks/add-service.yaml --extra-vars @vars/
 - `service_config_format`: The format of the configuration file (`yaml` or `json`). Defaults to `yaml`.
 - `service_config_target_path`: The full path inside the container where the configuration file will be mounted (e.g., `/app/config.yaml`). Defaults to `/<name>.config.<format>`.
 - `service_config_name_override`: Allows you to specify a custom name for the Docker Swarm config resource, overriding the auto-generated hashed name.
+ - `internal_only`: When `true`, skips Traefik routing and HTTP labels (for DBs/queues). `host`, `path`, and `port` are not required.
+ - `env` / `env_vars`: Map of environment variables for the container. Avoid using `environment` as a var name (reserved by Jinja/Ansible).
+ - `ports`: List of published ports (e.g., `[{ target: 5432, published: 5432 }]`). Optional fields: `protocol`, `mode`. If `mode` is omitted, Swarm defaults to `ingress`.
+ - `volumes`: List of named volume mounts (e.g., `[{ name: pgdata, target: /var/lib/postgresql/data }]`).
+ - `healthcheck`: Compose-style healthcheck fields: `test`, `interval`, `timeout`, `retries`, `start_period`.
 
 ### Updating Services
 
@@ -161,6 +166,41 @@ ansible-playbook -i inventory.ini playbooks/add-service.yaml --extra-vars @vars/
 ```
 
 Changes to routing configuration trigger hot reloads. Changes to image or replicas trigger rolling updates.
+
+### Internal Services (Databases, Caches)
+
+For services not exposed via Traefik, set `internal_only: true` and provide only what the container needs (e.g., env, volumes, optional published ports):
+
+```yaml
+# vars/redis.yml
+name: redis
+image: redis:7-alpine
+internal_only: true
+command: "redis-server --appendonly yes"
+volumes:
+  - name: redis-data
+    target: /data
+ports:  # optional, if you want LAN access
+  - target: 6379
+    published: 6379
+    mode: host
+```
+
+Postgres example with env variables:
+
+```yaml
+# vars/db_idcards.yaml
+name: db_idcards
+image: postgres:16-alpine
+internal_only: true
+env:
+  POSTGRES_DB: app
+  POSTGRES_USER: app
+  POSTGRES_PASSWORD: change-me
+volumes:
+  - name: db_idcards_data
+    target: /var/lib/postgresql/data
+```
 
 ### Advanced: Using Configuration Files
 

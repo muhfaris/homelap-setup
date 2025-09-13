@@ -8,11 +8,24 @@ configs:
   {{ service_config_name }}:
     external: true
 {% endif %}
+{% if volumes is defined and volumes | length > 0 %}
+volumes:
+{%   for v in volumes %}
+  {{ v.name }}: {}
+{%   endfor %}
+{% endif %}
 
 services:
   {{ name }}:
     image: {{ image }}
     networks: [web]
+{% set _env = (vars.get('svc_environment') or vars.get('environment') or vars.get('env') or vars.get('env_vars') or {}) %}
+{% if _env %}
+    environment:
+{%   for k, v in _env.items() %}
+      {{ k }}: {{ v | to_json if (v is mapping or v is sequence) else v | string }}
+{%   endfor %}
+{% endif %}
 {% if service_config is defined %}
 {%   set default_target_path = '/' + name + '.config.' + (service_config_format | default('yaml')) %}
     configs:
@@ -22,6 +35,50 @@ services:
 {% if command is defined %}
     command: /bin/sh -c "exec {{ command }}"
 {% endif %}
+{% if ports is defined and ports | length > 0 %}
+    ports:
+{%   for p in ports %}
+      - target: {{ p.target }}
+{%     if p.published is defined %}
+        published: {{ p.published }}
+{%     endif %}
+{%     if p.protocol is defined %}
+        protocol: {{ p.protocol }}
+{%     endif %}
+{%     if p.mode is defined %}
+        mode: {{ p.mode }}
+{%     endif %}
+{%   endfor %}
+{% endif %}
+{% if volumes is defined and volumes | length > 0 %}
+    volumes:
+{%   for v in volumes %}
+      - type: volume
+        source: {{ v.name }}
+        target: {{ v.target }}
+{%     if v.read_only | default(false) %}
+        read_only: true
+{%     endif %}
+{%   endfor %}
+{% endif %}
+{% if healthcheck is defined %}
+    healthcheck:
+{%   if healthcheck.test is defined %}
+      test: {{ healthcheck.test | to_json if (healthcheck.test is sequence) else ["CMD-SHELL", healthcheck.test] | to_json }}
+{%   endif %}
+{%   if healthcheck.interval is defined %}
+      interval: {{ healthcheck.interval }}
+{%   endif %}
+{%   if healthcheck.timeout is defined %}
+      timeout: {{ healthcheck.timeout }}
+{%   endif %}
+{%   if healthcheck.retries is defined %}
+      retries: {{ healthcheck.retries }}
+{%   endif %}
+{%   if healthcheck.start_period is defined %}
+      start_period: {{ healthcheck.start_period }}
+{%   endif %}
+{% endif %}
     deploy:
       replicas: {{ replicas | default(1) }}
       restart_policy: { condition: any }
@@ -30,8 +87,10 @@ services:
         reservations:
           cpus: '{{ cpu | default("0.25") }}'
           memory: '{{ memory | default("64M") }}'
+{% if not (internal_only | default(false)) %}
       labels:
         - traefik.enable=true
         - traefik.docker.lbswarm=true
         - traefik.docker.network=web
         - traefik.http.services.{{ name }}.loadbalancer.server.port={{ port }}
+{% endif %}
