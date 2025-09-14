@@ -28,12 +28,11 @@
         priority: 2000
         playbook_action: update
   post_tasks:
-    - name: Update stack with stop-first strategy
+    - name: Update only the targeted service (no full redeploy)
       community.docker.docker_stack:
         state: present
         name: "{{ stack_name }}"
+        with_registry_auth: true
+        prune: false
         compose: >-
-          {{
-
-            lookup('ansible.builtin.fileglob', services_dir + '/*.yaml', wantlist=True)
-          }}
+          {{ [ homelab_root + '/hl-traefik.yaml', services_dir + '/' + name + '.yaml' ] }}

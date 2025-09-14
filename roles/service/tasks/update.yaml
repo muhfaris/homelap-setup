@@ -52,13 +52,12 @@
     src: service-swarm.yaml.j2
     dest: "{{ services_dir }}/{{ name }}.yaml"
     mode: "0644"
-  notify: Redeploy homelab stack
+  
 - name: Render router (Traefik File Provider)
   ansible.builtin.template:
     src: route-file.yaml.j2
     dest: "{{ homelab_root }}/dynamic/routers/{{ name }}.yaml"
     mode: "0644"
-  notify: Redeploy homelab stack
   when: not (internal_only | default(false))
 
 # No force handler execution for updates - let post_tasks handle deployment
